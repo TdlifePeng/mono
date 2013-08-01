@@ -219,7 +219,7 @@ sub UnityBooc
 
 sub BuildBareMinimumProfile
 {
-	UnityXBuild("$booCheckout/src/Boo.Lang/Boo.Lang.csproj", undef, "/property:DefineConstants=\"NO_SERIALIZATION_INFO,NO_SYSTEM_PROCESS,NO_ICLONEABLE,NO_SYSTEM_REFLECTION_EMIT,MSBUILD\" /out:bin/BareMinimum/Release");
+	UnityXBuild("$booCheckout/src/Boo.Lang/Boo.Lang.csproj", undef, "/property:DefineConstants=\"NO_SERIALIZATION_INFO,NO_SYSTEM_PROCESS,NO_ICLONEABLE,NO_SYSTEM_REFLECTION_EMIT,MSBUILD\" /p:out=bin/BareMinimum/Release/Boo.Lang.dll");
 	
 	mkdir("$monodistroLibMono/bare-minimum");
  	cp("$booCheckout/src/Boo.Lang/bin/BareMinimum/Release/Boo.Lang.dll $monodistroLibMono/bare-minimum/"); 	
