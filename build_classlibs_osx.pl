@@ -223,6 +223,9 @@ sub BuildBareMinimumProfile
 	
 	mkdir("$monodistroLibMono/bare-minimum");
  	cp("$booCheckout/src/Boo.Lang/bin/BareMinimum/Release/Boo.Lang.dll $monodistroLibMono/bare-minimum/"); 	
+
+ 	# Remove the generated files to avoid next profile build to be incorrectly skipped because it thinks it is up-to-date
+ 	system("rm -rf $booCheckout/src/Boo.Lang/obj"); 	
 }
 
 sub BuildUnityScriptForUnity
