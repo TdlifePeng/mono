@@ -219,14 +219,10 @@ sub UnityBooc
 
 sub BuildBareMinimumProfile
 {
-	UnityXBuild("$booCheckout/src/Boo.Lang/Boo.Lang.csproj", undef, "NO_SERIALIZATION_INFO,NO_SYSTEM_PROCESS,NO_ICLONEABLE,NO_SYSTEM_REFLECTION_EMIT,MSBUILD");
+	UnityXBuild("$booCheckout/src/Boo.Lang/Boo.Lang.csproj", undef, "/property:DefineConstants=\"NO_SERIALIZATION_INFO,NO_SYSTEM_PROCESS,NO_ICLONEABLE,NO_SYSTEM_REFLECTION_EMIT,MSBUILD\" /out:bin/BareMinimum/Release");
 	
 	mkdir("$monodistroLibMono/bare-minimum");
- 	system("mv $booCheckout/src/Boo.Lang/bin/Release/Boo.Lang.dll $monodistroLibMono/bare-minimum/") eq 0 or die("failed to move Boo.Lang.dll");
- 	
- 	# Remove the generated files to avoid next profile build to be incorrectly skipped because it thinks it is up-to-date
- 	system("rm -rf $booCheckout/src/Boo.Lang/bin");
- 	system("rm -rf $booCheckout/src/Boo.Lang/obj");
+ 	cp("$booCheckout/src/Boo.Lang/bin/BareMinimum/Release/Boo.Lang.dll $monodistroLibMono/bare-minimum/"); 	
 }
 
 sub BuildUnityScriptForUnity
@@ -287,11 +283,11 @@ sub UnityXBuild
 	my $optionalConfiguration = shift; 
 	my $configuration = defined($optionalConfiguration) ? $optionalConfiguration : "Release";
 	
-	my $optionalCustomDefines = shift;
-	my $customDefines = defined($optionalCustomDefines) ? "/property:DefineConstants=\"" . $optionalCustomDefines . "\"" : "";
+	my $optionalCustomArguments = shift;
+	my $customArguments = defined($optionalCustomArguments) ? $optionalCustomArguments : "";
 
 	my $target = "Rebuild";
-	my $commandLine = "$monoprefix/bin/xbuild $projectFile /p:CscToolExe=smcs /p:CscToolPath=$monoprefixUnity /p:MonoTouch=True /t:$target /p:Configuration=$configuration /p:AssemblySearchPaths=$monoprefixUnity $customDefines";
+	my $commandLine = "$monoprefix/bin/xbuild $projectFile /p:CscToolExe=smcs /p:CscToolPath=$monoprefixUnity /p:MonoTouch=True /t:$target /p:Configuration=$configuration /p:AssemblySearchPaths=$monoprefixUnity $customArguments";
 	
 	system($commandLine) eq 0 or die("Failed to xbuild '$projectFile' for unity");
 }
