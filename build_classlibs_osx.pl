@@ -217,12 +217,27 @@ sub UnityBooc
 	system("$monoprefixUnity/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $commandLine");
 }
 
+sub BuildBareMinimumProfile
+{
+	UnityXBuild("$booCheckout/src/Boo.Lang/Boo.Lang.csproj", undef, "NO_SERIALIZATION_INFO,NO_SYSTEM_PROCESS,NO_ICLONEABLE,NO_SYSTEM_REFLECTION_EMIT,MSBUILD");
+	
+	mkdir("$monodistroLibMono/bare-minimum");
+ 	system("mv $booCheckout/src/Boo.Lang/bin/Release/Boo.Lang.dll $monodistroLibMono/bare-minimum/") eq 0 or die("failed to move Boo.Lang.dll");
+ 	
+ 	# Remove the generated files to avoid next profile build to be incorrectly skipped because it thinks it is up-to-date
+ 	system("rm -rf $booCheckout/src/Boo.Lang/bin");
+ 	system("rm -rf $booCheckout/src/Boo.Lang/obj");
+}
+
 sub BuildUnityScriptForUnity
 {
 	# TeamCity is handling this
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
 		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout);
 	}
+
+	BuildBareMinimumProfile
+
 	UnityXBuild("$booCheckout/src/booc/booc.csproj");
 	
 	cp("$booCheckout/ide-build/Boo.Lang*.dll $monoprefixUnity/");
@@ -264,7 +279,7 @@ sub BuildUnityScriptForUnity
 	$ENV{MONO_EXECUTABLE} = <$monoprefix/bin/cli>;
 	system(<$monoprefix/bin/nunit-console2>, "-noshadow", "-exclude=FailsOnMono", $UnityScriptTestsDLL) eq 0 or die("UnityScript test suite failed");
 }
-	
+
 sub UnityXBuild
 {
 	my $projectFile = shift;
@@ -272,8 +287,11 @@ sub UnityXBuild
 	my $optionalConfiguration = shift; 
 	my $configuration = defined($optionalConfiguration) ? $optionalConfiguration : "Release";
 	
+	my $optionalCustomDefines = shift;
+	my $customDefines = defined($optionalCustomDefines) ? "/property:DefineConstants=\"" . $optionalCustomDefines . "\"" : "";
+
 	my $target = "Rebuild";
-	my $commandLine = "$monoprefix/bin/xbuild $projectFile /p:CscToolExe=smcs /p:CscToolPath=$monoprefixUnity /p:MonoTouch=True /t:$target /p:Configuration=$configuration /p:AssemblySearchPaths=$monoprefixUnity";
+	my $commandLine = "$monoprefix/bin/xbuild $projectFile /p:CscToolExe=smcs /p:CscToolPath=$monoprefixUnity /p:MonoTouch=True /t:$target /p:Configuration=$configuration /p:AssemblySearchPaths=$monoprefixUnity $customDefines";
 	
 	system($commandLine) eq 0 or die("Failed to xbuild '$projectFile' for unity");
 }
