@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include "private/gc_priv.h"
+#include "Ex/MonoObjects.h"
 
 signed_word GC_mem_found = 0;
 			/* Number of words of memory reclaimed     */
@@ -329,6 +330,7 @@ COUNT_DECL
 	    if( mark_bit_from_hdr(hhdr, word_no) ) {
 		p += sz;
 	    } else {
+		FreeMonoObject(p);
 		INCR_WORDS(sz);
 		/* object is available - put on list */
 		    obj_link(p) = list;
@@ -376,6 +378,7 @@ COUNT_DECL
     NWORDS_DECL
 #   define DO_OBJ(start_displ) \
 	if (!(mark_word & ((word)1 << start_displ))) { \
+		FreeMonoObject(p+start_displ);\
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    p[start_displ+1] = 0; \
@@ -418,6 +421,7 @@ COUNT_DECL
     NWORDS_DECL
 #   define DO_OBJ(start_displ) \
 	if (!(mark_word & ((word)1 << start_displ))) { \
+		FreeMonoObject(p+start_displ);\
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    p[start_displ+1] = 0; \
@@ -478,6 +482,7 @@ COUNT_DECL
     /* go through all words in block */
 	while( p <= plim )  {
 	    if( !mark_bit_from_hdr(hhdr, word_no) ) {
+		FreeMonoObject(p);
 		INCR_WORDS(sz);
 		/* object is available - put on list */
 		    obj_link(p) = list;
@@ -535,6 +540,7 @@ COUNT_DECL
     NWORDS_DECL
 #   define DO_OBJ(start_displ) \
 	if (!(mark_word & ((word)1 << start_displ))) { \
+		FreeMonoObject(p+start_displ);\
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    INCR_WORDS(2); \
@@ -576,6 +582,7 @@ COUNT_DECL
     NWORDS_DECL
 #   define DO_OBJ(start_displ) \
 	if (!(mark_word & ((word)1 << start_displ))) { \
+		FreeMonoObject(p+start_displ);\
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    INCR_WORDS(4); \
@@ -627,6 +634,7 @@ COUNT_DECL
     NWORDS_DECL
 #   define DO_OBJ(start_displ) \
 	if (!(mark_word & ((word)1 << start_displ))) { \
+		FreeMonoObject(p+start_displ);\
 	    p[start_displ] = (word)list; \
 	    list = (ptr_t)(p+start_displ); \
 	    INCR_WORDS(1); \
@@ -740,6 +748,20 @@ COUNT_DECL
     }
 }
 
+static void FreeMonoObjects(struct hblk *hbp, size_t sz)
+{
+	word * p, * plim;
+
+	p = (word *)(hbp->hb_body);
+	plim = (word *)((((word)hbp) + HBLKSIZE)- WORDS_TO_BYTES(sz));
+	do
+	{
+		FreeMonoObject(p);
+		p += sz;
+	}
+	while(p<=plim && plim>0);
+}
+
 /*
  * Restore an unmarked large object or an entirely empty blocks of small objects
  * to the heap block free list.
@@ -777,6 +799,7 @@ COUNT_DECL
 #	      ifdef GATHERSTATS
 	        GC_mem_found += sz;
 #	      endif
+		  FreeMonoObjects(hbp, sz);
 	      GC_freehblk(hbp);
 	    }
 	}
@@ -789,6 +812,7 @@ COUNT_DECL
 #	  ifdef GATHERSTATS
             GC_mem_found += BYTES_TO_WORDS(HBLKSIZE);
 #	  endif
+		  FreeMonoObjects(hbp, sz);
           GC_freehblk(hbp);
         } else if (TRUE != GC_block_nearly_full(hhdr)){
           /* group of smaller objects, enqueue the real work */

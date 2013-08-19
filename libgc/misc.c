@@ -24,6 +24,7 @@
 #define I_HIDE_POINTERS	/* To make GC_call_with_alloc_lock visible */
 #include "private/gc_pmark.h"
 
+
 #ifdef GC_SOLARIS_THREADS
 # include <sys/syscall.h>
 #endif
@@ -479,6 +480,8 @@ int GC_get_suspend_signal GC_PROTO(())
 #endif
 }
 
+#include "Ex/MonoObjects.h"
+
 GC_bool GC_is_initialized = FALSE;
 
 void GC_init()
@@ -498,6 +501,8 @@ void GC_init()
           pfn(&GC_allocate_ml, 4000);
       else
 	  InitializeCriticalSection (&GC_allocate_ml);
+
+	  InitMonoObjects();
     }
 #endif /* MSWIN32 */
 

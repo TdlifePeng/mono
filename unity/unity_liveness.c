@@ -4,6 +4,7 @@
 #include <mono/metadata/tabledefs.h>
 #include <mono/metadata/class-internals.h>
 #include <mono/metadata/domain-internals.h>
+#include <libgc/Ex/MonoObjects.h>
 
 typedef struct _LivenessState LivenessState;
 
@@ -435,11 +436,10 @@ void mono_unity_liveness_add_object_callback(gpointer* objs, gint count, void* a
  * Returns a gchandle to an array of MonoObject* that are reachable from the static roots
  * in the current domain and derive from type retrieved from @filter_handle (if not NULL).
  */
-gpointer mono_unity_liveness_calculation_from_statics_managed(gpointer filter_handle)
+MonoArray* mono_unity_liveness_calculation_from_statics_managed_InternalCall(MonoReflectionType * filter_type)
 {
 	int i = 0;
 	MonoArray *res = NULL;
-	MonoReflectionType* filter_type = (MonoReflectionType*)mono_gchandle_get_target (GPOINTER_TO_UINT(filter_handle));
 	MonoClass* filter = NULL;
 	GPtrArray* objects = NULL;
 	LivenessState* liveness_state = NULL;
@@ -463,9 +463,36 @@ gpointer mono_unity_liveness_calculation_from_statics_managed(gpointer filter_ha
 	}
 	g_ptr_array_free (objects, TRUE);
 
+	return res;
+
+}
+
+gpointer mono_unity_liveness_calculation_from_statics_managed(gpointer filter_handle)
+{
+	MonoArray *res = NULL;
+	MonoReflectionType* filter_type = (MonoReflectionType*)mono_gchandle_get_target (GPOINTER_TO_UINT(filter_handle));
+
+	res = mono_unity_liveness_calculation_from_statics_managed_InternalCall (filter_type);
 	
 	return (gpointer)mono_gchandle_new ((MonoObject*)res, FALSE);
+}
 
+static void WriteToFile( const char * type, size_t count, void * userdata )
+{
+	fprintf( ( FILE * )userdata, "%d,\"%s\"\r", count, type );
+}
+
+void mono_unity_snapshot_objects_InternalCall(MonoString * filepath)
+{
+	char *		str = mono_string_to_utf8( filepath );
+	FILE *		fp = fopen( str, "wt" );
+
+	if( fp != NULL )
+	{
+		StatisticMonoObject( WriteToFile, fp );
+		fclose( fp );
+	}
+	g_free( str );
 }
 
 /**

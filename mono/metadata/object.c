@@ -42,15 +42,18 @@
 #include <mono/utils/strenc.h>
 #include <mono/utils/mono-counters.h>
 #include <mono/utils/mono-error-internals.h>
+#include <libgc/Ex/MonoObjects.h>
 #include "cominterop.h"
+
+#define REG_MONOOBJ(obj, vt) NewMonoObject(obj, vt->klass->name_space, vt->klass->name)
 
 #ifdef HAVE_BOEHM_GC
 #define NEED_TO_ZERO_PTRFREE 1
-#define ALLOC_PTRFREE(obj,vt,size) do { (obj) = GC_MALLOC_ATOMIC ((size)); (obj)->vtable = (vt); (obj)->synchronisation = NULL;} while (0)
-#define ALLOC_OBJECT(obj,vt,size) do { (obj) = GC_MALLOC ((size)); (obj)->vtable = (vt);} while (0)
+#define ALLOC_PTRFREE(obj,vt,size) do { (obj) = GC_MALLOC_ATOMIC ((size)); (obj)->vtable = (vt); (obj)->synchronisation = NULL; REG_MONOOBJ(obj, vt);} while (0)
+#define ALLOC_OBJECT(obj,vt,size) do { (obj) = GC_MALLOC ((size)); (obj)->vtable = (vt); REG_MONOOBJ(obj, vt);} while (0)
 #ifdef HAVE_GC_GCJ_MALLOC
 #define GC_NO_DESCRIPTOR ((gpointer)(0 | GC_DS_LENGTH))
-#define ALLOC_TYPED(dest,size,type) do { (dest) = GC_GCJ_MALLOC ((size),(type)); } while (0)
+#define ALLOC_TYPED(dest,size,type) do { (dest) = GC_GCJ_MALLOC ((size),(type));  REG_MONOOBJ(dest, type);} while (0)
 #else
 #define GC_NO_DESCRIPTOR (NULL)
 #define ALLOC_TYPED(dest,size,type) do { (dest) = GC_MALLOC ((size)); *(gpointer*)dest = (type);} while (0)
