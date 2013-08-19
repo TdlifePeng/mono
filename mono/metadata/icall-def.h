@@ -271,9 +271,9 @@ ICALL(GC_5, "SuppressFinalize", ves_icall_System_GC_SuppressFinalize)
 ICALL(GC_6, "WaitForPendingFinalizers", ves_icall_System_GC_WaitForPendingFinalizers)
 ICALL(GC_7, "get_MaxGeneration", mono_gc_max_generation)
 
-ICALL_TYPE(UnityGC, "System.GCEx", UnityGC_0)
-ICALL(UnityGC_0, "UnityLivenessObjects", mono_unity_liveness_calculation_from_statics_managed_InternalCall)
-ICALL(UnityGC_1, "SnapshotObjects", mono_unity_snapshot_objects_InternalCall)
+ICALL_TYPE(GCINFO, "System.GCInfo", GCINFO_0)
+ICALL(GCINFO_0, "LivenessObjects", mono_unity_liveness_calculation_from_statics_managed_InternalCall)
+ICALL(GCINFO_1, "SnapshotObjects", mono_unity_snapshot_objects_InternalCall)
 
 ICALL_TYPE(COMPINF, "System.Globalization.CompareInfo", COMPINF_1)
 ICALL(COMPINF_1, "assign_sortkey(object,string,System.Globalization.CompareOptions)", ves_icall_System_Globalization_CompareInfo_assign_sortkey)
