@@ -499,8 +499,10 @@ static void WriteReferToFile( const void * point, const char * pname, const void
 {
 	if( point == NULL )
 		fprintf( ( FILE * )userdata, ",,\"%s\",%x\r", rname, refer );
-	else
+	else if( refer != NULL )
 		fprintf( ( FILE * )userdata, "\"%s\",%x,\"%s\",%x\r", pname, point, rname, refer );
+	else
+		fprintf( ( FILE * )userdata, "\"%s\",%x,,\r", pname, point );
 }
 
 void mono_unity_objects_references_InternalCall( MonoString * type, MonoString * filepath )
