@@ -20,6 +20,7 @@ int    mono_gc_invoke_finalizers (void);
 MonoArray* mono_unity_liveness_calculation_from_statics_managed_InternalCall(MonoReflectionType * filter_type);
 void mono_unity_snapshot_objects_InternalCall( MonoString * filepath );
 void mono_unity_objects_references_InternalCall( MonoString * type, MonoString * filepath );
+void mono_unity_objects_reverse_references_InternalCall( MonoString * type, MonoString * filepath, gint maxdepth );
 
 G_END_DECLS
 

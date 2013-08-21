@@ -518,6 +518,21 @@ void mono_unity_objects_references_InternalCall( MonoString * type, MonoString *
 	g_free( strtype );
 }
 
+void mono_unity_objects_reverse_references_InternalCall( MonoString * type, MonoString * filepath, gint maxdepth )
+{
+	char *		strtype = mono_string_to_utf8( type );
+	char *		strpath = mono_string_to_utf8( filepath );
+	FILE *		fp = fopen( strpath, "wt" );
+
+	if( fp != NULL )
+	{
+		StatisticMonoObjectReverseRefer( strtype, WriteReferToFile, fp, maxdepth );
+		fclose( fp );
+	}
+	g_free( strpath );
+	g_free( strtype );
+}
+
 /**
  * mono_unity_liveness_calculation_from_root:
  *

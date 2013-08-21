@@ -195,3 +195,96 @@ void StatisticMonoObjectRefer( const char * type, ReferMonoObject cb, void * use
 	UnlockMonoObjects();
 	UnlockGC();
 }
+
+static void StatisticMonoObjectReverseRefer( list<const void *> & points, set<const void *> & processed, ReferMonoObject cb, void * userdata, int maxdepth )
+{
+	auto									depth = 1;
+	map<const void *, set<const void *>>	map;
+
+	while( !points.empty() )
+	{
+		auto		point = points.front();
+
+		points.pop_front();
+		if( point == NULL )
+		{
+			if( maxdepth > 0 && depth == maxdepth )
+				break;
+
+			++depth;
+			continue;
+		}
+
+		auto		islast = points.size() > 0 && points.front() == NULL;
+		auto		first = true;
+
+		for( auto it = Objects.cbegin(); it != Objects.cend(); ++it )
+			if( it->first != point )
+			{
+				auto		refit = map.find( it->first );
+
+				if( refit == map.end() )
+				{
+					refit = map.insert( pair<const void *, set<const void *>>( it->first, set<const void *>() ) ).first;
+
+					auto		hdp = HBLKPTR( it->first );
+					auto		hhdr = HDR( hdp );
+					auto		first = true;
+
+					for( auto i = 0; i < hhdr->hb_sz; ++i )
+					{
+						auto		ref = ( const void * )( ( ( const word * )it->first )[ i ] );
+
+						if( Objects.find( ref ) != Objects.end() )
+							refit->second.insert( ref );
+					}
+				}
+
+				if( refit->second.find( point ) != refit->second.end() )
+				{
+					if( processed.find( it->first ) == processed.end() )
+					{
+						points.push_back( it->first );
+						processed.insert( it->first );
+					}
+
+					if( !first )
+						cb( NULL, NULL, it->first, Objects[ it->first ].c_str(), userdata );
+					else
+					{
+						first = false;
+						cb( point, Objects[ point ].c_str(), it->first, Objects[ it->first ].c_str(), userdata );
+					}
+					break;
+				}
+			}
+
+		if( islast )
+			points.push_back( NULL );
+	}
+}
+
+void StatisticMonoObjectReverseRefer( const char * type, ReferMonoObject cb, void * userdata, int maxdepth )
+{
+	LockGC();
+	LockMonoObjects();
+
+	list<const void *>	points;
+	set<const void *>	set;
+
+	for_each( Objects.cbegin(), Objects.cend(),
+		[ type, &points, &set ]( const pair<const void *, string> & item )
+	{
+		if( item.second == type )
+		{
+			points.push_back( item.first );
+			set.insert( item.first );
+		}
+	} );
+	points.push_back( NULL );
+
+	StatisticMonoObjectReverseRefer( points, set, cb, userdata, maxdepth );
+
+	UnlockMonoObjects();
+	UnlockGC();
+}

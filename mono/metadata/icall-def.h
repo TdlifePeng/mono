@@ -275,6 +275,7 @@ ICALL_TYPE(GCINFO, "System.GCInfo", GCINFO_0)
 ICALL(GCINFO_0, "LivenessObjects", mono_unity_liveness_calculation_from_statics_managed_InternalCall)
 ICALL(GCINFO_1, "SnapshotObjects", mono_unity_snapshot_objects_InternalCall)
 ICALL(GCINFO_2, "XxxObjectRefers", mono_unity_objects_references_InternalCall)
+ICALL(GCINFO_3, "XxxObjectReverseRefers", mono_unity_objects_reverse_references_InternalCall)
 
 ICALL_TYPE(COMPINF, "System.Globalization.CompareInfo", COMPINF_1)
 ICALL(COMPINF_1, "assign_sortkey(object,string,System.Globalization.CompareOptions)", ves_icall_System_Globalization_CompareInfo_assign_sortkey)

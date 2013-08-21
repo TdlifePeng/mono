@@ -22,6 +22,7 @@ void StatisticMonoObject( CountMonoObject cb, void * userdata );
 
 typedef BOOL ( *ReferMonoObject )( const void * point, const char * pname, const void * refer, const char * rname, void * userdata );
 void StatisticMonoObjectRefer( const char * type, ReferMonoObject cb, void * userdata );
+void StatisticMonoObjectReverseRefer( const char * type, ReferMonoObject cb, void * userdata, int maxdepth );
 
 typedef BOOL ( *EachMonoObject )( const void * point, const char * type, void * );
 void ForEachMonoObjects( EachMonoObject cb, void * userdata );
