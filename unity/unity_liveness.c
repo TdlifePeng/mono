@@ -477,22 +477,45 @@ gpointer mono_unity_liveness_calculation_from_statics_managed(gpointer filter_ha
 	return (gpointer)mono_gchandle_new ((MonoObject*)res, FALSE);
 }
 
-static void WriteToFile( const char * type, size_t count, void * userdata )
+static void WriteCountToFile( const char * type, size_t count, void * userdata )
 {
 	fprintf( ( FILE * )userdata, "%d,\"%s\"\r", count, type );
 }
 
-void mono_unity_snapshot_objects_InternalCall(MonoString * filepath)
+void mono_unity_snapshot_objects_InternalCall( MonoString * filepath )
 {
 	char *		str = mono_string_to_utf8( filepath );
 	FILE *		fp = fopen( str, "wt" );
 
 	if( fp != NULL )
 	{
-		StatisticMonoObject( WriteToFile, fp );
+		StatisticMonoObject( WriteCountToFile, fp );
 		fclose( fp );
 	}
 	g_free( str );
+}
+
+static void WriteReferToFile( const void * point, const char * pname, const void * refer, const char * rname, void * userdata )
+{
+	if( point == NULL )
+		fprintf( ( FILE * )userdata, ",,\"%s\",%x\r", rname, refer );
+	else
+		fprintf( ( FILE * )userdata, "\"%s\",%x,\"%s\",%x\r", pname, point, rname, refer );
+}
+
+void mono_unity_objects_references_InternalCall( MonoString * type, MonoString * filepath )
+{
+	char *		strtype = mono_string_to_utf8( type );
+	char *		strpath = mono_string_to_utf8( filepath );
+	FILE *		fp = fopen( strpath, "wt" );
+
+	if( fp != NULL )
+	{
+		StatisticMonoObjectRefer( strtype, WriteReferToFile, fp );
+		fclose( fp );
+	}
+	g_free( strpath );
+	g_free( strtype );
 }
 
 /**

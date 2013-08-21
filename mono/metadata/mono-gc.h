@@ -18,7 +18,8 @@ gint64 mono_gc_get_heap_size   (void);
 int    mono_gc_invoke_finalizers (void);
 
 MonoArray* mono_unity_liveness_calculation_from_statics_managed_InternalCall(MonoReflectionType * filter_type);
-void mono_unity_snapshot_objects_InternalCall(MonoString * filepath);
+void mono_unity_snapshot_objects_InternalCall( MonoString * filepath );
+void mono_unity_objects_references_InternalCall( MonoString * type, MonoString * filepath );
 
 G_END_DECLS
 
