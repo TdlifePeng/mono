@@ -477,9 +477,9 @@ gpointer mono_unity_liveness_calculation_from_statics_managed(gpointer filter_ha
 	return (gpointer)mono_gchandle_new ((MonoObject*)res, FALSE);
 }
 
-static void WriteCountToFile( const char * type, size_t count, void * userdata )
+static void WriteCountToFile( const char * type, size_t count, size_t size, void * userdata )
 {
-	fprintf( ( FILE * )userdata, "%d,\"%s\"\r", count, type );
+	fprintf( ( FILE * )userdata, "%d,\"%s\",%d,%d\r", count, type, size, count * size );
 }
 
 void mono_unity_count_objects_InternalCall( MonoString * filepath )

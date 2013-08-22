@@ -91,20 +91,25 @@ void StatisticMonoObject( CountMonoObject cb, void * userdata )
 {
 	LockMonoObjects();
 
-	map<string, int>	Count;
+	map<string, pair<int, const void *>>	Count;
 
 	for( auto it = Objects.cbegin(); it != Objects.cend(); ++it )
 	{
 		auto		cit = Count.find( it->second );
 
 		if( cit != Count.end() )
-			++cit->second;
+			++cit->second.first;
 		else
-			Count[ it->second ] = 1;
+			Count[ it->second ] = pair<int, const void *>( 1, it->first );
 	}
 
 	for( auto it = Count.cbegin(); it != Count.cend(); ++it )
-		cb( it->first.c_str(), it->second, userdata );
+	{
+		auto		hdp = HBLKPTR( it->second.second );
+		auto		hhdr = HDR( hdp );
+
+		cb( it->first.c_str(), it->second.first, hhdr->hb_sz * sizeof( word ), userdata );
+	}
 
 	UnlockMonoObjects();
 }

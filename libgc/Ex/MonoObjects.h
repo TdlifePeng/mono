@@ -17,7 +17,7 @@ void NewMonoObject( const void * point, const char * spacename, const char * nam
 void FreeMonoObject( const void * point );
 
 
-typedef void ( *CountMonoObject )( const char * point, size_t size, void * userdata );
+typedef void ( *CountMonoObject )( const char * point, size_t count, size_t size, void * userdata );
 void StatisticMonoObject( CountMonoObject cb, void * userdata );
 
 typedef BOOL ( *ReferMonoObject )( const void * point, const char * pname, const void * refer, const char * rname, void * userdata );
