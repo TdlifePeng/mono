@@ -482,7 +482,7 @@ static void WriteCountToFile( const char * type, size_t count, void * userdata )
 	fprintf( ( FILE * )userdata, "%d,\"%s\"\r", count, type );
 }
 
-void mono_unity_snapshot_objects_InternalCall( MonoString * filepath )
+void mono_unity_count_objects_InternalCall( MonoString * filepath )
 {
 	char *		str = mono_string_to_utf8( filepath );
 	FILE *		fp = fopen( str, "wt" );
@@ -505,7 +505,7 @@ static void WriteReferToFile( const void * point, const char * pname, const void
 		fprintf( ( FILE * )userdata, "\"%s\",%x,,\r", pname, point );
 }
 
-void mono_unity_objects_references_InternalCall( MonoString * type, MonoString * filepath )
+void mono_unity_type_references_InternalCall( MonoString * type, MonoString * filepath )
 {
 	char *		strtype = mono_string_to_utf8( type );
 	char *		strpath = mono_string_to_utf8( filepath );
@@ -520,7 +520,7 @@ void mono_unity_objects_references_InternalCall( MonoString * type, MonoString *
 	g_free( strtype );
 }
 
-void mono_unity_objects_reverse_references_InternalCall( MonoString * type, MonoString * filepath, gint maxdepth )
+void mono_unity_type_reverse_references_InternalCall( MonoString * type, MonoString * filepath, gint maxdepth )
 {
 	char *		strtype = mono_string_to_utf8( type );
 	char *		strpath = mono_string_to_utf8( filepath );
