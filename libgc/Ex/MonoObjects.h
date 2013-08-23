@@ -13,7 +13,11 @@ void UnlockMonoObjects();
 
 
 void InitMonoObjects( void );
-void NewMonoObject( const void * point, const char * spacename, const char * name );
+
+typedef const char * ( *TypeFullNameGetter )( const void * vt );
+typedef void ( *TypeFullNameFreer )( const char * str );
+void NewMonoObject( const void * point, const void * vt, TypeFullNameGetter getter, TypeFullNameFreer freer );
+
 void FreeMonoObject( const void * point );
 
 

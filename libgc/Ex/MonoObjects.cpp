@@ -32,11 +32,12 @@ extern "C"
 
 using namespace std;
 
-static map<const void *, string>	Objects;									// 跨lib引用问题多多
-static int							NewError = 0;
-static int							FreeError = 0;
+static map<const void *, string>		TypeNames;
+static map<const void *, const void *>	Objects;									// 跨lib引用问题多多
+static int								NewError = 0;
+static int								FreeError = 0;
 
-static CRITICAL_SECTION				Counter_ml;
+static CRITICAL_SECTION					Counter_ml;
 
 
 void LockMonoObjects()
@@ -54,20 +55,29 @@ void InitMonoObjects( void )
 	InitializeCriticalSection( &Counter_ml );
 }
 
-void NewMonoObject( const void * point, const char * spacename, const char * name )
+void NewMonoObject( const void * point, const void * vt, TypeFullNameGetter getter, TypeFullNameFreer freer )
 {
 	LockMonoObjects();
 
-	auto	fullname = strlen( spacename ) > 0 ? ( ( string )spacename + "." + name ) : name;
+	auto	nit = TypeNames.find( vt );
+
+	if( nit == TypeNames.end() )
+	{
+		auto		str = getter( vt );
+
+		nit = TypeNames.insert( pair<const void *, string>( vt, str ) ).first;
+		freer( str );
+	}
+
 	auto	it = Objects.find( point );
 
 	if( it == Objects.end() )
-		Objects.insert( pair<const void *, string>( point, fullname ) );
+		Objects.insert( pair<const void *, const void *>( point, vt ) );
 	else
 	{
 		++NewError;
-		if( it->second != fullname )
-			it->second = fullname;
+		if( it->second != vt )
+			it->second = vt;
 	}
 
 	UnlockMonoObjects();
@@ -95,12 +105,12 @@ void StatisticMonoObject( CountMonoObject cb, void * userdata )
 
 	for( auto it = Objects.cbegin(); it != Objects.cend(); ++it )
 	{
-		auto		cit = Count.find( it->second );
+		auto		cit = Count.find( TypeNames[ it->second ] );
 
 		if( cit != Count.end() )
 			++cit->second.first;
 		else
-			Count[ it->second ] = pair<int, const void *>( 1, it->first );
+			Count[ TypeNames[ it->second ] ] = pair<int, const void *>( 1, it->first );
 	}
 
 	for( auto it = Count.cbegin(); it != Count.cend(); ++it )
@@ -117,7 +127,7 @@ void StatisticMonoObject( CountMonoObject cb, void * userdata )
 void ForEachMonoObject( EachMonoObject cb, void * userdata )
 {
 	for( auto it = Objects.cbegin(); it != Objects.cend(); ++it )
-		if( cb( it->first, it->second.c_str(), userdata ) )
+		if( cb( it->first, TypeNames[ it->second ].c_str(), userdata ) )
 			break;
 }
 
@@ -166,17 +176,17 @@ static void StatisticMonoObjectRefer( list<const void *> & points, set<const voi
 				}
 
 				if( !first )
-					cb( NULL, NULL, refer, Objects[ refer ].c_str(), userdata );
+					cb( NULL, NULL, refer, TypeNames[ Objects[ refer ] ].c_str(), userdata );
 				else
 				{
 					first = false;
-					cb( point, Objects[ point ].c_str(), refer, Objects[ refer ].c_str(), userdata );
+					cb( point, TypeNames[ Objects[ point ] ].c_str(), refer, TypeNames[ Objects[ refer ] ].c_str(), userdata );
 				}
 			}
 		}
 
 		if( first )
-			cb( point, Objects[ point ].c_str(), NULL, NULL, userdata );
+			cb( point, TypeNames[ Objects[ point ] ].c_str(), NULL, NULL, userdata );
 	}
 }
 
@@ -189,9 +199,9 @@ void StatisticMonoObjectRefer( const char * type, ReferMonoObject cb, void * use
 	set<const void *>	set;
 
 	for_each( Objects.cbegin(), Objects.cend(),
-		[ type, &points, &set ]( const pair<const void *, string> & item )
+		[ type, &points, &set ]( const pair<const void *, const void *> & item )
 		{
-			if( item.second == type )
+			if( TypeNames[ item.second ] == type )
 			{
 				points.push_back( item.first );
 				set.insert( item.first );
@@ -267,16 +277,16 @@ static void StatisticMonoObjectReverseRefer( list<const void *> & points, ReferM
 				}
 
 				if( !first )
-					cb( NULL, NULL, *rit, Objects[ *rit ].c_str(), userdata );
+					cb( NULL, NULL, *rit, TypeNames[ Objects[ *rit ] ].c_str(), userdata );
 				else
 				{
 					first = false;
-					cb( point, Objects[ point ].c_str(), *rit, Objects[ *rit ].c_str(), userdata );
+					cb( point, TypeNames[ Objects[ point ] ].c_str(), *rit, TypeNames[ Objects[ *rit ] ].c_str(), userdata );
 				}
 			}
 		}
 		else
-			cb( point, Objects[ point ].c_str(), NULL, NULL, userdata );
+			cb( point, TypeNames[ Objects[ point ] ].c_str(), NULL, NULL, userdata );
 
 		if( islast )
 			points.push_back( NULL );
@@ -291,9 +301,9 @@ void StatisticMonoObjectReverseRefer( const char * type, ReferMonoObject cb, voi
 	list<const void *>	points;
 
 	for_each( Objects.cbegin(), Objects.cend(),
-		[ type, &points ]( const pair<const void *, string> & item )
+		[ type, &points ]( const pair<const void *, const void *> & item )
 	{
-		if( item.second == type )
+		if( TypeNames[ item.second ] == type )
 			points.push_back( item.first );
 	} );
 

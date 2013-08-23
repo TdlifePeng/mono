@@ -45,7 +45,10 @@
 #include <libgc/Ex/MonoObjects.h>
 #include "cominterop.h"
 
-#define REG_MONOOBJ(obj, vt) NewMonoObject(obj, vt->klass->name_space, vt->klass->name)
+static const char * GetTypeFullName( const void * vt );
+static void FreeTypeFullName( const char * str );
+
+#define REG_MONOOBJ(obj, vt) NewMonoObject(obj, vt, GetTypeFullName, FreeTypeFullName )
 
 #ifdef HAVE_BOEHM_GC
 #define NEED_TO_ZERO_PTRFREE 1
@@ -87,6 +90,17 @@ mono_ldstr_metadata_sig (MonoDomain *domain, const char* sig);
 static CRITICAL_SECTION ldstr_section;
 
 static gboolean profile_allocs = TRUE;
+
+
+static const char * GetTypeFullName( const void * vt )
+{
+	return mono_type_get_full_name( ( ( const MonoVTable * )vt )->klass );
+}
+
+static void FreeTypeFullName( const char * str )
+{
+	g_free( ( void * )str );
+}
 
 void
 mono_runtime_object_init (MonoObject *this)
