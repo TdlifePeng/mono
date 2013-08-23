@@ -33,7 +33,7 @@ extern "C"
 using namespace std;
 
 static map<const void *, string>		TypeNames;
-static map<const void *, const void *>	Objects;									// 跨lib引用问题多多
+static map<const void *, const void *>	Objects;								// 跨lib引用问题多多
 static int								NewError = 0;
 static int								FreeError = 0;
 
@@ -99,56 +99,32 @@ void FreeMonoObject( const void * point )
 
 void StatisticMonoObject( CountMonoObject cb, void * userdata )
 {
+	LockGC();
 	LockMonoObjects();
 
-	map<string, pair<int, const void *>>	Count;
+	map<string, pair<size_t, size_t>>	Count;
 
 	for( auto it = Objects.cbegin(); it != Objects.cend(); ++it )
 	{
+		auto		hdp = HBLKPTR( it->first );
+		auto		hhdr = HDR( hdp );
+		auto		size = hhdr->hb_sz * sizeof( word );
 		auto		cit = Count.find( TypeNames[ it->second ] );
 
 		if( cit != Count.end() )
+		{
 			++cit->second.first;
+			cit->second.second += size;
+		}
 		else
-			Count[ TypeNames[ it->second ] ] = pair<int, const void *>( 1, it->first );
+			Count[ TypeNames[ it->second ] ] = pair<size_t, size_t>( 1, size );
 	}
 
 	for( auto it = Count.cbegin(); it != Count.cend(); ++it )
-	{
-		auto		hdp = HBLKPTR( it->second.second );
-		auto		hhdr = HDR( hdp );
-
-		cb( it->first.c_str(), it->second.first, hhdr->hb_sz * sizeof( word ), userdata );
-	}
+		cb( it->first.c_str(), it->second.first, it->second.second, userdata );
 
 	UnlockMonoObjects();
-}
-
-void ForEachMonoObject( EachMonoObject cb, void * userdata )
-{
-	for( auto it = Objects.cbegin(); it != Objects.cend(); ++it )
-		if( cb( it->first, TypeNames[ it->second ].c_str(), userdata ) )
-			break;
-}
-
-BOOL ForEachMonoObjectRefer( const void * point, EachMonoObjectRefer cb, void * userdata )
-{
-	if( Objects.find( point ) == Objects.end() )
-		return FALSE;
-
-	auto		hdp = HBLKPTR( point );
-	auto		hhdr = HDR( hdp );
-
-	for( auto i = 0; i < hhdr->hb_sz; ++i )
-	{
-		auto		refer = ( const void * )( ( ( const word * )point )[ i ] );
-
-		if( Objects.find( refer ) != Objects.end() )
-			if( cb( point, refer, userdata ) )
-				break;
-	}
-
-	return TRUE;
+	UnlockGC();
 }
 
 static void StatisticMonoObjectRefer( list<const void *> & points, set<const void *> & set, ReferMonoObject cb, void * userdata )
@@ -311,4 +287,39 @@ void StatisticMonoObjectReverseRefer( const char * type, ReferMonoObject cb, voi
 
 	UnlockMonoObjects();
 	UnlockGC();
+}
+
+void ForEachMonoObject( EachMonoObject cb, void * userdata )
+{
+	for( auto it = Objects.cbegin(); it != Objects.cend(); ++it )
+		if( cb( it->first, it->second, userdata ) )
+			break;
+}
+
+void ForEachMonoType( const char * type, EachMonoObject cb, void * userdata )
+{
+	for( auto it = Objects.cbegin(); it != Objects.cend(); ++it )
+		if( TypeNames[ it->second ] == type )
+			if( cb( it->first, it->second, userdata ) )
+				break;
+}
+
+BOOL ForEachMonoObjectRefer( const void * point, EachMonoObjectRefer cb, void * userdata )
+{
+	if( Objects.find( point ) == Objects.end() )
+		return FALSE;
+
+	auto		hdp = HBLKPTR( point );
+	auto		hhdr = HDR( hdp );
+
+	for( auto i = 0; i < hhdr->hb_sz; ++i )
+	{
+		auto		refer = ( const void * )( ( ( const word * )point )[ i ] );
+
+		if( Objects.find( refer ) != Objects.end() )
+			if( cb( point, refer, userdata ) )
+				break;
+	}
+
+	return TRUE;
 }

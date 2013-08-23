@@ -28,10 +28,14 @@ typedef BOOL ( *ReferMonoObject )( const void * point, const char * pname, const
 void StatisticMonoObjectRefer( const char * type, ReferMonoObject cb, void * userdata );
 void StatisticMonoObjectReverseRefer( const char * type, ReferMonoObject cb, void * userdata, int maxdepth );
 
-typedef BOOL ( *EachMonoObject )( const void * point, const char * type, void * );
-void ForEachMonoObjects( EachMonoObject cb, void * userdata );
 
-typedef BOOL ( *EachMonoObjectRefer )( const void * point, const void * refer, void * );
+// 使用者考虑什么时候锁什么
+
+typedef BOOL ( *EachMonoObject )( const void * point, const void * vt, void * userdata );
+void ForEachMonoObject( EachMonoObject cb, void * userdata );
+void ForEachMonoType( const char * type, EachMonoObject cb, void * userdata );
+
+typedef BOOL ( *EachMonoObjectRefer )( const void * point, const void * refer, void * userdata );
 BOOL ForEachMonoObjectRefer( const void * point, EachMonoObjectRefer cb, void * userdata );
 
 

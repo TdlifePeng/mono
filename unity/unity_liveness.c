@@ -479,7 +479,7 @@ gpointer mono_unity_liveness_calculation_from_statics_managed(gpointer filter_ha
 
 static void WriteCountToFile( const char * type, size_t count, size_t size, void * userdata )
 {
-	fprintf( ( FILE * )userdata, "%d,\"%s\",%d,%d\r", count, type, size, count * size );
+	fprintf( ( FILE * )userdata, "%d,\"%s\",%d,%d\r", count, type, size, size / count );
 }
 
 void mono_unity_count_objects_InternalCall( MonoString * filepath )
@@ -489,6 +489,7 @@ void mono_unity_count_objects_InternalCall( MonoString * filepath )
 
 	if( fp != NULL )
 	{
+		fprintf( fp, "count,typename,sum size,avg size\r" );
 		StatisticMonoObject( WriteCountToFile, fp );
 		fclose( fp );
 	}
@@ -513,6 +514,7 @@ void mono_unity_type_references_InternalCall( MonoString * type, MonoString * fi
 
 	if( fp != NULL )
 	{
+		fprintf( fp, "typename,address,reference,address\r" );
 		StatisticMonoObjectRefer( strtype, WriteReferToFile, fp );
 		fclose( fp );
 	}
@@ -528,6 +530,7 @@ void mono_unity_type_reverse_references_InternalCall( MonoString * type, MonoStr
 
 	if( fp != NULL )
 	{
+		fprintf( fp, "typename,address,reverse ref,address\r" );
 		StatisticMonoObjectReverseRefer( strtype, WriteReferToFile, fp, maxdepth );
 		fclose( fp );
 	}
