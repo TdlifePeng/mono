@@ -63,10 +63,19 @@ void NewMonoObject( const void * point, const void * vt, TypeFullNameGetter gett
 
 	if( nit == TypeNames.end() )
 	{
+		UnlockMonoObjects();
+
 		auto		str = getter( vt );
 
-		nit = TypeNames.insert( pair<const void *, string>( vt, str ) ).first;
+		LockMonoObjects();
+
+		nit = TypeNames.find( vt );
+		if( nit == TypeNames.end() )
+			nit = TypeNames.insert( pair<const void *, string>( vt, str ) ).first;
+
+		UnlockMonoObjects();
 		freer( str );
+		LockMonoObjects();
 	}
 
 	auto	it = Objects.find( point );
