@@ -272,10 +272,12 @@ ICALL(GC_6, "WaitForPendingFinalizers", ves_icall_System_GC_WaitForPendingFinali
 ICALL(GC_7, "get_MaxGeneration", mono_gc_max_generation)
 
 ICALL_TYPE(GCINFO, "System.GCInfo", GCINFO_0)
-ICALL(GCINFO_0, "_LivenessObjects", mono_unity_liveness_calculation_from_statics_managed_InternalCall)
-ICALL(GCINFO_1, "_CountObjects", mono_unity_count_objects_InternalCall)
-ICALL(GCINFO_2, "_TypeRefers", mono_unity_type_references_InternalCall)
-ICALL(GCINFO_3, "_TypeReverseRefers", mono_unity_type_reverse_references_InternalCall)
+ICALL(GCINFO_0, "_CountObjects", mono_unity_count_objects_InternalCall)
+ICALL(GCINFO_1, "_LivenessObjects", mono_unity_liveness_calculation_from_statics_managed_InternalCall)
+ICALL(GCINFO_2, "_ObjectNew", mono_object_new_permanent_InternalCall)
+ICALL(GCINFO_3, "_StringClone", mono_string_clone_permanent_InternalCall)
+ICALL(GCINFO_4, "_TypeRefers", mono_unity_type_references_InternalCall)
+ICALL(GCINFO_5, "_TypeReverseRefers", mono_unity_type_reverse_references_InternalCall)
 
 ICALL_TYPE(COMPINF, "System.Globalization.CompareInfo", COMPINF_1)
 ICALL(COMPINF_1, "assign_sortkey(object,string,System.Globalization.CompareOptions)", ves_icall_System_Globalization_CompareInfo_assign_sortkey)

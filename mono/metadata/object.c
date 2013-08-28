@@ -53,10 +53,13 @@ static void FreeTypeFullName( const char * str );
 #ifdef HAVE_BOEHM_GC
 #define NEED_TO_ZERO_PTRFREE 1
 #define ALLOC_PTRFREE(obj,vt,size) do { (obj) = GC_MALLOC_ATOMIC ((size)); (obj)->vtable = (vt); (obj)->synchronisation = NULL; REG_MONOOBJ(obj, vt);} while (0)
+#define ALLOC_PTRFREE_PER(obj,vt,size) do { (obj) = g_malloc ((size)); memset(obj, 0, size); (obj)->vtable = (vt); (obj)->synchronisation = NULL; REG_MONOOBJ(obj, vt);} while (0)
 #define ALLOC_OBJECT(obj,vt,size) do { (obj) = GC_MALLOC ((size)); (obj)->vtable = (vt); REG_MONOOBJ(obj, vt);} while (0)
+#define ALLOC_OBJECT_PER(obj,vt,size) do { (obj) = g_malloc ((size)); memset(obj, 0, size); (obj)->vtable = (vt); REG_MONOOBJ(obj, vt);} while (0)
 #ifdef HAVE_GC_GCJ_MALLOC
 #define GC_NO_DESCRIPTOR ((gpointer)(0 | GC_DS_LENGTH))
 #define ALLOC_TYPED(dest,size,type) do { (dest) = GC_GCJ_MALLOC ((size),(type));  REG_MONOOBJ(dest, type);} while (0)
+#define ALLOC_TYPED_PER(dest,size,type) do { (dest) = g_malloc ((size)); memset(dest, 0, size); (dest)->vtable = (type);  REG_MONOOBJ(dest, type);} while (0)
 #else
 #define GC_NO_DESCRIPTOR (NULL)
 #define ALLOC_TYPED(dest,size,type) do { (dest) = GC_MALLOC ((size)); *(gpointer*)dest = (type);} while (0)
@@ -78,6 +81,10 @@ static void FreeTypeFullName( const char * str );
 
 static MonoObject* mono_object_new_ptrfree (MonoVTable *vtable);
 static MonoObject* mono_object_new_ptrfree_box (MonoVTable *vtable);
+
+static MonoObject * mono_object_new_specific_permanent (MonoVTable * vtable);
+static MonoObject* mono_object_new_ptrfree_permanent (MonoVTable * vtable);
+static MonoObject * mono_object_new_alloc_specific_permanent( MonoVTable * vtable );
 
 static void
 get_default_field_value (MonoDomain* domain, MonoClassField *field, void *value);
@@ -3900,6 +3907,16 @@ mono_object_allocate (size_t size, MonoVTable *vtable)
 	return o;
 }
 
+static inline void *
+mono_object_allocate_permanent (size_t size, MonoVTable *vtable)
+{
+	MonoObject *o;
+	mono_stats.new_object_count++;
+	ALLOC_OBJECT_PER (o, vtable, size);
+
+	return o;
+}
+
 /**
  * mono_object_allocate_ptrfree:
  * @size: number of bytes to allocate
@@ -3917,10 +3934,29 @@ mono_object_allocate_ptrfree (size_t size, MonoVTable *vtable)
 }
 
 static inline void *
+mono_object_allocate_ptrfree_permanent (size_t size, MonoVTable *vtable)
+{
+	MonoObject *o;
+	mono_stats.new_object_count++;
+	ALLOC_PTRFREE_PER (o, vtable, size);
+	return o;
+}
+
+static inline void *
 mono_object_allocate_spec (size_t size, MonoVTable *vtable)
 {
 	void *o;
 	ALLOC_TYPED (o, size, vtable);
+	mono_stats.new_object_count++;
+
+	return o;
+}
+
+static inline void *
+mono_object_allocate_spec_permanent (size_t size, MonoVTable *vtable)
+{
+	MonoObject *o;
+	ALLOC_TYPED_PER (o, size, vtable);
 	mono_stats.new_object_count++;
 
 	return o;
@@ -3949,6 +3985,17 @@ mono_object_new (MonoDomain *domain, MonoClass *klass)
 	return mono_object_new_specific (vtable);
 }
 
+MonoObject *
+mono_object_new_permanent_InternalCall( MonoReflectionType * type )
+{
+	MonoVTable *vtable;
+
+	MONO_ARCH_SAVE_REGS;
+	vtable = mono_class_vtable (((MonoObject *)type)->vtable->domain, mono_class_from_mono_type (type->type));
+	if (!vtable)
+		return NULL;
+	return mono_object_new_specific_permanent (vtable);
+}
 /**
  * mono_object_new_specific:
  * @vtable: the vtable of the object that we want to create
@@ -3989,6 +4036,19 @@ mono_object_new_specific (MonoVTable *vtable)
 	return mono_object_new_alloc_specific (vtable);
 }
 
+static MonoObject *
+mono_object_new_specific_permanent (MonoVTable *vtable)
+{
+	MonoObject *o;
+
+	MONO_ARCH_SAVE_REGS;
+
+	/* check for is_com_object for COM Interop */
+	if (vtable->remote || vtable->klass->is_com_object)
+		return NULL;
+	return mono_object_new_alloc_specific_permanent (vtable);
+}
+
 MonoObject *
 mono_object_new_alloc_specific (MonoVTable *vtable)
 {
@@ -4010,6 +4070,28 @@ mono_object_new_alloc_specific (MonoVTable *vtable)
 	return o;
 }
 
+static MonoObject *
+mono_object_new_alloc_specific_permanent (MonoVTable *vtable)
+{
+	MonoObject *o;
+
+	if (G_UNLIKELY (vtable->klass->has_finalize))
+		return NULL;
+
+	if (!vtable->klass->has_references) {
+		o = mono_object_new_ptrfree_permanent (vtable);
+	} else if (vtable->gc_descr != GC_NO_DESCRIPTOR) {
+		o = mono_object_allocate_spec_permanent (vtable->klass->instance_size, vtable);
+	} else {
+		/*		printf("OBJECT: %s.%s.\n", vtable->klass->name_space, vtable->klass->name); */
+		o = mono_object_allocate_permanent (vtable->klass->instance_size, vtable);
+	}
+
+	if (G_UNLIKELY (profile_allocs))
+		mono_profiler_allocation (o, vtable->klass);
+	return o;
+}
+
 MonoObject*
 mono_object_new_fast (MonoVTable *vtable)
 {
@@ -4023,6 +4105,30 @@ mono_object_new_ptrfree (MonoVTable *vtable)
 {
 	MonoObject *obj;
 	ALLOC_PTRFREE (obj, vtable, vtable->klass->instance_size);
+#if NEED_TO_ZERO_PTRFREE
+	/* an inline memset is much faster for the common vcase of small objects
+	 * note we assume the allocated size is a multiple of sizeof (void*).
+	 */
+	if (vtable->klass->instance_size < 128) {
+		gpointer *p, *end;
+		end = (gpointer*)((char*)obj + vtable->klass->instance_size);
+		p = (gpointer*)((char*)obj + sizeof (MonoObject));
+		while (p < end) {
+			*p = NULL;
+			++p;
+		}
+	} else {
+		memset ((char*)obj + sizeof (MonoObject), 0, vtable->klass->instance_size - sizeof (MonoObject));
+	}
+#endif
+	return obj;
+}
+
+static MonoObject*
+mono_object_new_ptrfree_permanent (MonoVTable *vtable)
+{
+	MonoObject *obj;
+	ALLOC_PTRFREE_PER (obj, vtable, vtable->klass->instance_size);
 #if NEED_TO_ZERO_PTRFREE
 	/* an inline memset is much faster for the common vcase of small objects
 	 * note we assume the allocated size is a multiple of sizeof (void*).
@@ -4491,6 +4597,28 @@ mono_string_new_size (MonoDomain *domain, gint32 len)
 #endif
 	if (G_UNLIKELY (profile_allocs))
 		mono_profiler_allocation ((MonoObject*)s, mono_defaults.string_class);
+
+	return s;
+}
+
+MonoString *
+	mono_string_clone_permanent_InternalCall( MonoString * str, BOOL intern )
+{
+	MonoString		* s;
+	MonoDomain		* domain = mono_domain_get();
+	MonoVTable		* vtable;
+	size_t			size = sizeof( MonoString ) + ( str->length + 1 ) * 2;
+
+	vtable = mono_class_vtable( domain, mono_defaults.string_class );
+	g_assert( vtable );
+
+	s = ( MonoString * )mono_object_allocate_ptrfree_permanent( size, vtable );
+
+	s->length = str->length;
+	memcpy( str->chars, s->chars, ( str->length + 1 ) * 2 );
+
+	if( G_UNLIKELY( profile_allocs ) )
+		mono_profiler_allocation( &s->object, mono_defaults.string_class );
 
 	return s;
 }
