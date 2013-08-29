@@ -21,8 +21,10 @@ MonoArray* mono_unity_liveness_calculation_from_statics_managed_InternalCall(Mon
 void mono_unity_count_objects_InternalCall( MonoString * filepath );
 void mono_unity_type_references_InternalCall( MonoString * type, MonoString * filepath );
 void mono_unity_type_reverse_references_InternalCall( MonoString * type, MonoString * filepath, gint maxdepth );
-MonoObject * mono_object_new_permanent_InternalCall( MonoReflectionType * type );
-MonoString * mono_string_clone_permanent_InternalCall( MonoString * str, BOOL intern );
+MonoObject * mono_object_new_outgc_InternalCall( MonoReflectionType * type );
+MonoString * mono_string_clone_outgc_InternalCall( MonoString * str, BOOL intern );
+MonoArray * mono_array_new_outgc_InternalCall( MonoReflectionType * type, mono_array_size_t n );
+void mono_object_free_outgc_InternalCall( MonoObject * obj );
 
 G_END_DECLS
 
