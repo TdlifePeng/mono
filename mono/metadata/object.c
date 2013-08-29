@@ -3998,10 +3998,14 @@ mono_object_new_outgc_InternalCall( MonoReflectionType * type )
 	return mono_object_new_specific_outgc (vtable);
 }
 
+static size_t	OutOfHeapSize = 0;
+
 static void * AllocWithSize( size_t size )
 {
 	char *p = g_malloc(size + sizeof(size_t) * 2);
 	void *o = p + sizeof(size_t) * 2;
+
+	OutOfHeapSize += size;
 
 	((size_t *)p)[0] = size;
 	((size_t *)p)[1] = ~size;
@@ -4012,9 +4016,17 @@ static void * AllocWithSize( size_t size )
 void mono_object_free_outgc_InternalCall( MonoObject * obj )
 {
 	void *p = (char *)obj - sizeof(size_t) * 2;
-	g_assert(((size_t *)p)[0] != ~((size_t *)p)[1]);
+	size_t size = ((size_t *)p)[0];
+	g_assert(size != ~((size_t *)p)[1]);
 	memset(p, 0, ((size_t *)p)[0] + sizeof(size_t) * 2);
 	g_free( p );
+
+	OutOfHeapSize -= size;
+}
+
+size_t mono_out_of_heap_size( void )
+{
+	return OutOfHeapSize;
 }
 /**
  * mono_object_new_specific:
