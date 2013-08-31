@@ -86,6 +86,7 @@ static MonoObject* mono_object_new_ptrfree_box (MonoVTable *vtable);
 static MonoObject * mono_object_new_specific_outgc (MonoVTable * vtable);
 static MonoObject* mono_object_new_ptrfree_outgc (MonoVTable * vtable);
 static MonoObject * mono_object_new_alloc_specific_outgc( MonoVTable * vtable );
+static MonoString * mono_string_interned_replace(MonoString *str);
 
 static void
 get_default_field_value (MonoDomain* domain, MonoClassField *field, void *value);
@@ -4017,7 +4018,7 @@ void mono_object_free_outgc_InternalCall( MonoObject * obj )
 {
 	void *p = (char *)obj - sizeof(size_t) * 2;
 	size_t size = ((size_t *)p)[0];
-	g_assert(size != ~((size_t *)p)[1]);
+	g_assert(size == ~((size_t *)p)[1]);
 	memset(p, 0, ((size_t *)p)[0] + sizeof(size_t) * 2);
 	g_free( p );
 
@@ -4700,6 +4701,9 @@ mono_string_clone_outgc_InternalCall( MonoString * str, BOOL intern )
 	s->length = str->length;
 	memcpy( s->chars, str->chars, ( str->length + 1 ) * 2 );
 
+	if( intern )
+		mono_string_intern( s );
+
 	if( G_UNLIKELY( profile_allocs ) )
 		mono_profiler_allocation( &s->object, mono_defaults.string_class );
 
@@ -5122,6 +5126,31 @@ mono_string_is_interned_lookup (MonoString *str, int insert)
 	}
 	ldstr_unlock ();
 	return NULL;
+}
+
+static MonoString *
+mono_string_interned_replace(MonoString *str)
+{
+	MonoGHashTable *ldstr_table;
+	MonoString *res;
+	MonoDomain *domain;
+
+	domain = ((MonoObject *)str)->vtable->domain;
+	ldstr_table = domain->ldstr_table;
+	ldstr_lock ();
+	if ((res = mono_g_hash_table_lookup (ldstr_table, str))) {
+		if( mono_g_hash_table_remove(ldstr_table, res) )
+			mono_g_hash_table_insert(ldstr_table, str, str);
+		else
+			res = NULL;
+		ldstr_unlock ();
+		return res;
+	}
+	else
+	{
+		ldstr_unlock ();
+		return NULL;
+	}
 }
 
 /**
