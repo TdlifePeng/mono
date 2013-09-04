@@ -966,7 +966,8 @@ ICALL(GCINFO_3, "_TypeReverseRefers", mono_unity_type_reverse_references_Interna
 
 ICALL_TYPE(UNSAFE, "UnityMono.Unsafe", UNSAFE_0)
 ICALL(UNSAFE_0, "_ArrayNew", mono_array_new_outgc_InternalCall)
-ICALL(UNSAFE_1, "_ObjectFree", mono_object_free_outgc_InternalCall)
-ICALL(UNSAFE_2, "_ObjectNew", mono_object_new_outgc_InternalCall)
-ICALL(UNSAFE_3, "_OutOfHeapSize", mono_out_of_heap_size)
-ICALL(UNSAFE_4, "_StringClone", mono_string_clone_outgc_InternalCall)
+ICALL(UNSAFE_1, "_ForceFree", mono_force_free_outgc_InternalCall)
+ICALL(UNSAFE_2, "_ObjectFree", mono_object_free_outgc_InternalCall)
+ICALL(UNSAFE_3, "_ObjectNew", mono_object_new_outgc_InternalCall)
+ICALL(UNSAFE_4, "_OutOfHeapSize", mono_out_of_heap_size)
+ICALL(UNSAFE_5, "_StringClone", mono_string_clone_outgc_InternalCall)

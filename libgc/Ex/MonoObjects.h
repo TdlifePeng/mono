@@ -20,6 +20,8 @@ void NewMonoObject( const void * point, const void * vt, TypeFullNameGetter gett
 
 void FreeMonoObject( const void * point );
 
+void MonoObjectUnsafeFree( const void * point );
+
 
 typedef void ( *CountMonoObject )( const char * point, size_t count, size_t size, void * userdata );
 void StatisticMonoObject( CountMonoObject cb, void * userdata );

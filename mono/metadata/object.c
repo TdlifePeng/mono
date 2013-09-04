@@ -4029,6 +4029,11 @@ size_t mono_out_of_heap_size( void )
 {
 	return OutOfHeapSize;
 }
+
+void mono_force_free_outgc_InternalCall( MonoObject * obj )
+{
+	MonoObjectUnsafeFree( obj );
+}
 /**
  * mono_object_new_specific:
  * @vtable: the vtable of the object that we want to create

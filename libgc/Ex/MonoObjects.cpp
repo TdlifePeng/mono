@@ -36,6 +36,7 @@ static map<const void *, string>		TypeNames;
 static map<const void *, const void *>	Objects;								// 跨lib引用问题多多
 static int								NewError = 0;
 static int								FreeError = 0;
+static int								ForceFreeError = 0;
 
 static CRITICAL_SECTION					Counter_ml;
 
@@ -104,6 +105,14 @@ void FreeMonoObject( const void * point )
 		++FreeError;
 
 	UnlockMonoObjects();
+}
+
+void MonoObjectUnsafeFree( const void * point )
+{
+	if( !GC_is_marked( ( ptr_t )point ) )
+		GC_set_mark_bit( ( ptr_t )point );
+	else
+		++ForceFreeError;
 }
 
 void StatisticMonoObject( CountMonoObject cb, void * userdata )

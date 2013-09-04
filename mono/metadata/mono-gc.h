@@ -25,6 +25,7 @@ MonoObject * mono_object_new_outgc_InternalCall( MonoReflectionType * type );
 MonoString * mono_string_clone_outgc_InternalCall( MonoString * str, BOOL intern );
 MonoArray * mono_array_new_outgc_InternalCall( MonoReflectionType * type, mono_array_size_t n );
 void mono_object_free_outgc_InternalCall( MonoObject * obj );
+void mono_force_free_outgc_InternalCall( MonoObject * obj );
 size_t mono_out_of_heap_size( void );
 
 G_END_DECLS
