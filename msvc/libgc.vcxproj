@@ -348,6 +348,12 @@
     <ClCompile Include="..\libgc\blacklst.c" />
     <ClCompile Include="..\libgc\dbg_mlc.c" />
     <ClCompile Include="..\libgc\dyn_load.c" />
+    <ClCompile Include="..\libgc\Ex\MonoObjects.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_eglib|Win32'">NotUsing</PrecompiledHeader>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug_eglib|Win32'">CompileAsCpp</CompileAs>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_eglib|Win32'">NotUsing</PrecompiledHeader>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release_eglib|Win32'">CompileAsCpp</CompileAs>
+    </ClCompile>
     <ClCompile Include="..\libgc\finalize.c" />
     <ClCompile Include="..\libgc\gcj_mlc.c" />
     <ClCompile Include="..\libgc\headers.c" />
@@ -367,6 +373,7 @@
     <ClCompile Include="..\libgc\win32_threads.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\libgc\Ex\MonoObjects.h" />
     <ClInclude Include="..\libgc\include\gc.h" />
     <ClInclude Include="..\libgc\include\private\gc_hdrs.h" />
     <ClInclude Include="..\libgc\include\private\gc_locks.h" />

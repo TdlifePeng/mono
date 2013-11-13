@@ -957,3 +957,17 @@ ICALL(COMOBJ_1, "CreateRCW", ves_icall_System_ComObject_CreateRCW)
 ICALL(COMOBJ_2, "GetInterfaceInternal", ves_icall_System_ComObject_GetInterfaceInternal)
 ICALL(COMOBJ_3, "ReleaseInterfaces", ves_icall_System_ComObject_ReleaseInterfaces)
 #endif
+
+ICALL_TYPE(GCINFO, "UnityMono.GCInfo", GCINFO_0)
+ICALL(GCINFO_0, "_CountObjects", mono_unity_count_objects_InternalCall)
+ICALL(GCINFO_1, "_LivenessObjects", mono_unity_liveness_calculation_from_statics_managed_InternalCall)
+ICALL(GCINFO_2, "_TypeRefers", mono_unity_type_references_InternalCall)
+ICALL(GCINFO_3, "_TypeReverseRefers", mono_unity_type_reverse_references_InternalCall)
+
+ICALL_TYPE(UNSAFE, "UnityMono.Unsafe", UNSAFE_0)
+ICALL(UNSAFE_0, "_ArrayNew", mono_array_new_outgc_InternalCall)
+ICALL(UNSAFE_1, "_ForceFree", mono_force_free_outgc_InternalCall)
+ICALL(UNSAFE_2, "_ObjectFree", mono_object_free_outgc_InternalCall)
+ICALL(UNSAFE_3, "_ObjectNew", mono_object_new_outgc_InternalCall)
+ICALL(UNSAFE_4, "_OutOfHeapSize", mono_out_of_heap_size)
+ICALL(UNSAFE_5, "_StringClone", mono_string_clone_outgc_InternalCall)

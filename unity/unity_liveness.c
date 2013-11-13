@@ -4,6 +4,7 @@
 #include <mono/metadata/tabledefs.h>
 #include <mono/metadata/class-internals.h>
 #include <mono/metadata/domain-internals.h>
+#include <libgc/Ex/MonoObjects.h>
 
 typedef struct _LivenessState LivenessState;
 
@@ -435,11 +436,10 @@ void mono_unity_liveness_add_object_callback(gpointer* objs, gint count, void* a
  * Returns a gchandle to an array of MonoObject* that are reachable from the static roots
  * in the current domain and derive from type retrieved from @filter_handle (if not NULL).
  */
-gpointer mono_unity_liveness_calculation_from_statics_managed(gpointer filter_handle)
+MonoArray* mono_unity_liveness_calculation_from_statics_managed_InternalCall(MonoReflectionType * filter_type)
 {
 	int i = 0;
 	MonoArray *res = NULL;
-	MonoReflectionType* filter_type = (MonoReflectionType*)mono_gchandle_get_target (GPOINTER_TO_UINT(filter_handle));
 	MonoClass* filter = NULL;
 	GPtrArray* objects = NULL;
 	LivenessState* liveness_state = NULL;
@@ -463,9 +463,79 @@ gpointer mono_unity_liveness_calculation_from_statics_managed(gpointer filter_ha
 	}
 	g_ptr_array_free (objects, TRUE);
 
+	return res;
+
+}
+
+gpointer mono_unity_liveness_calculation_from_statics_managed(gpointer filter_handle)
+{
+	MonoArray *res = NULL;
+	MonoReflectionType* filter_type = (MonoReflectionType*)mono_gchandle_get_target (GPOINTER_TO_UINT(filter_handle));
+
+	res = mono_unity_liveness_calculation_from_statics_managed_InternalCall (filter_type);
 	
 	return (gpointer)mono_gchandle_new ((MonoObject*)res, FALSE);
+}
 
+static void WriteCountToFile( const char * type, size_t count, size_t size, void * userdata )
+{
+	fprintf( ( FILE * )userdata, "%d,\"%s\",%d,%d\r", count, type, size, size / count );
+}
+
+void mono_unity_count_objects_InternalCall( MonoString * filepath )
+{
+	char *		str = mono_string_to_utf8( filepath );
+	FILE *		fp = fopen( str, "wt" );
+
+	if( fp != NULL )
+	{
+		fprintf( fp, "count,typename,sum size,avg size\r" );
+		StatisticMonoObject( WriteCountToFile, fp );
+		fclose( fp );
+	}
+	g_free( str );
+}
+
+static void WriteReferToFile( const void * point, const char * pname, const void * refer, const char * rname, void * userdata )
+{
+	if( point == NULL )
+		fprintf( ( FILE * )userdata, ",,\"%s\",%x\r", rname, refer );
+	else if( refer != NULL )
+		fprintf( ( FILE * )userdata, "\"%s\",%x,\"%s\",%x\r", pname, point, rname, refer );
+	else
+		fprintf( ( FILE * )userdata, "\"%s\",%x,,\r", pname, point );
+}
+
+void mono_unity_type_references_InternalCall( MonoString * type, MonoString * filepath )
+{
+	char *		strtype = mono_string_to_utf8( type );
+	char *		strpath = mono_string_to_utf8( filepath );
+	FILE *		fp = fopen( strpath, "wt" );
+
+	if( fp != NULL )
+	{
+		fprintf( fp, "typename,address,reference,address\r" );
+		StatisticMonoObjectRefer( strtype, WriteReferToFile, fp );
+		fclose( fp );
+	}
+	g_free( strpath );
+	g_free( strtype );
+}
+
+void mono_unity_type_reverse_references_InternalCall( MonoString * type, MonoString * filepath, gint maxdepth )
+{
+	char *		strtype = mono_string_to_utf8( type );
+	char *		strpath = mono_string_to_utf8( filepath );
+	FILE *		fp = fopen( strpath, "wt" );
+
+	if( fp != NULL )
+	{
+		fprintf( fp, "typename,address,reverse ref,address\r" );
+		StatisticMonoObjectReverseRefer( strtype, WriteReferToFile, fp, maxdepth );
+		fclose( fp );
+	}
+	g_free( strpath );
+	g_free( strtype );
 }
 
 /**

@@ -1199,3 +1199,13 @@ int kind;
     
     return(*flh);
 }
+
+void LockGC()
+{
+	LOCK();
+}
+
+void UnlockGC()
+{
+	UNLOCK();
+}
