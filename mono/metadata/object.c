@@ -4707,7 +4707,15 @@ mono_string_clone_outgc_InternalCall( MonoString * str, BOOL intern )
 	memcpy( s->chars, str->chars, ( str->length + 1 ) * 2 );
 
 	if( intern )
-		mono_string_intern( s );
+	{
+		auto		is = mono_string_intern( s );
+
+		if( s != is )
+		{
+			mono_object_free_outgc_InternalCall( &s->object );
+			s = is;
+		}
+	}
 
 	if( G_UNLIKELY( profile_allocs ) )
 		mono_profiler_allocation( &s->object, mono_defaults.string_class );
